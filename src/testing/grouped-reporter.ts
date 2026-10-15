@@ -51,7 +51,7 @@ const TEST_GROUPS: TestGroup[] = [
         nestedSectionRoots: ['subfeatures'],
         sectionOrder: ['data-access', 'utils', 'subfeatures'],
         nestedSectionOrder: {
-          subfeatures: ['workouts', 'workout', 'log-workout'],
+          subfeatures: ['workouts', 'workout-routine', 'workout'],
         },
       },
       {
@@ -65,8 +65,8 @@ const TEST_GROUPS: TestGroup[] = [
         sectionByFolder: true,
       },
       {
-        name: 'LOGS',
-        path: '/features/logs/',
+        name: 'CALENDAR',
+        path: '/features/calendar/',
         sectionByFolder: true,
       },
       {

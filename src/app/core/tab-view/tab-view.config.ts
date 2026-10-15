@@ -1,4 +1,4 @@
-export type TabId = 'training' | 'body' | 'overview' | 'logs' | 'more';
+export type TabId = 'training' | 'body' | 'overview' | 'calendar' | 'more';
 
 export interface TabConfig {
   id: TabId;
@@ -27,7 +27,7 @@ export const TABS: readonly TabConfig[] = [
     requiresAuth: false,
   },
   {
-    id: 'logs',
+    id: 'calendar',
     icon: 'calendar-outline',
     activeIcon: 'calendar',
     requiresAuth: true,

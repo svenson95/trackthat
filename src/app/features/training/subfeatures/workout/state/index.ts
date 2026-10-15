@@ -1,1 +1,1 @@
-export * from './workout-editor/workout-editor.state';
+export * from './workout-editor.state';

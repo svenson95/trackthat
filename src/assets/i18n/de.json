@@ -54,7 +54,7 @@
           }
         }
       },
-      "workout": {
+      "workout-routine": {
         "plans": "Pläne",
         "empty-list": "Liste ist leer",
         "more-menu": {
@@ -120,7 +120,7 @@
           "shrugs_dumbbell_sitting": "Nackenheben Kurzhantel sitzend"
         }
       },
-      "log-workout": {
+      "workout": {
         "title": "Training",
         "inputs": {
           "load": {
@@ -158,11 +158,11 @@
         }
       }
     },
-    "logs": {
-      "tab-label": "Logs",
-      "tab-title": "Logs",
-      "no-data": "Keine Logs für diesen Tag vorhanden",
-      "loading": "Logs werden geladen ..."
+    "calendar": {
+      "tab-label": "Kalender",
+      "tab-title": "Kalender",
+      "no-data": "Keine Einträge für diesen Tag vorhanden",
+      "loading": "Einträge werden geladen ..."
     },
     "more": {
       "tab-label": "Mehr",

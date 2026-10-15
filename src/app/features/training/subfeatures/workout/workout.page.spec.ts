@@ -1,415 +1,468 @@
-import { signal, type WritableSignal } from '@angular/core';
+import { Location } from '@angular/common';
+import { signal, type Signal, type WritableSignal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { LoadingController, ModalController, provideIonicAngular } from '@ionic/angular';
-import { addIcons } from 'ionicons';
-import { ellipsisHorizontal, ellipsisVertical } from 'ionicons/icons';
+import { LoadingController } from '@ionic/angular';
 import { of, throwError } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { provideTestTranslations } from '../../../../../testing/translate-testing.provider';
-import type { ListItemExercise, WorkoutDoc, WorkoutList } from '../../../../core';
-import { WORKOUT_LIST_ITEM_HEADER } from '../../../../core';
+import { TranslateService } from '@ngx-translate/core';
+
+import type { LogWorkoutDoc, WorkoutSet } from '../../../../core';
 import { IonicUiService } from '../../../../shared';
 
 import { WorkoutsService } from '../../data-access';
 
-import { WorkoutEditorState } from './state';
+import { WorkoutService } from './data-access';
 import { WorkoutPage } from './workout.page';
+import { WorkoutEditorState } from './state';
+
+type WorkoutPageTestApi = {
+  readonly backButtonText: Signal<string>;
+  readonly canEdit: Signal<boolean>;
+  readonly isMoreMenuOpen: WritableSignal<boolean>;
+
+  startEditing(): Promise<void>;
+  presentPopover(event: Event): void;
+  abortEditing(): Promise<void>;
+  saveEditing(): Promise<void>;
+};
+
+const createWorkoutSet = (overrides: Partial<WorkoutSet> = {}): WorkoutSet => ({
+  load: 80,
+  reps: 10,
+  exercise: 'Bench Press',
+  itemId: 1,
+  note: null,
+  time: '19:23:45',
+  ...overrides,
+});
+
+const createWorkoutEntry = (overrides: Partial<LogWorkoutDoc> = {}): LogWorkoutDoc => ({
+  id: 'mongo-id',
+  userId: 'user-id',
+  logId: 123,
+  date: 1_758_484_800,
+  sets: [],
+  ...overrides,
+});
 
 describe('WorkoutPage', () => {
   let fixture: ComponentFixture<WorkoutPage>;
-  let component: WorkoutPage;
+  let page: WorkoutPageTestApi;
+  let moreMenu: HTMLIonPopoverElement;
 
-  let isLoadingSignal: WritableSignal<boolean>;
+  const logId = signal<number | undefined>(undefined);
+  const exercise = signal<string | null>(null);
+  const workoutEntry = signal<LogWorkoutDoc | undefined>(undefined);
 
-  let editorState: WorkoutEditorState;
+  const sortedWorkouts = signal<
+    Array<{
+      workoutId: number;
+      name: string;
+    }>
+  >([]);
 
-  let workoutsServiceMock: {
-    workoutsResource: {
-      isLoading: () => boolean;
-      value: ReturnType<typeof vi.fn>;
-    };
-    updateWorkoutList: ReturnType<typeof vi.fn>;
+  const isEditing = signal(false);
+  const hasChanges = signal(false);
+  const draftSets = signal<WorkoutSet[]>([]);
+
+  const workoutServiceMock = {
+    logId,
+    exercise,
+    workoutResource: {
+      value: workoutEntry,
+    },
+    updateSets: vi.fn(),
   };
 
-  let loadingMock: {
-    present: ReturnType<typeof vi.fn>;
-    dismiss: ReturnType<typeof vi.fn>;
+  const workoutsServiceMock = {
+    sortedWorkouts,
   };
 
-  let loadingControllerMock: {
-    create: ReturnType<typeof vi.fn>;
+  const editorStateMock = {
+    isEditing,
+    hasChanges,
+    draftSets,
+    start: vi.fn(),
+    cancel: vi.fn(),
+    finish: vi.fn(),
   };
 
-  let modalControllerMock: {
-    create: ReturnType<typeof vi.fn>;
+  const ionicUiServiceMock = {
+    closeSlidingItems: vi.fn().mockResolvedValue(undefined),
+    showError: vi.fn().mockResolvedValue(undefined),
   };
 
-  let ionicUiServiceMock: {
-    showError: ReturnType<typeof vi.fn>;
+  const locationMock = {
+    path: vi.fn().mockReturnValue(''),
+    replaceState: vi.fn(),
   };
 
-  const workout = createWorkout();
+  const loadingMock = {
+    present: vi.fn().mockResolvedValue(undefined),
+    dismiss: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const loadingControllerMock = {
+    create: vi.fn().mockResolvedValue(loadingMock),
+  };
+
+  const translateServiceMock = {
+    instant: vi.fn((key: string) => key),
+  };
+
+  const setRouteInputs = (workoutId = '1', itemId = '2', exercise = 'Bench Press'): void => {
+    fixture.componentRef.setInput('workoutId', workoutId);
+    fixture.componentRef.setInput('itemId', itemId);
+    fixture.componentRef.setInput('exercise', exercise);
+
+    fixture.detectChanges();
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    addIcons({
-      'ellipsis-horizontal': ellipsisHorizontal,
-      'ellipsis-vertical': ellipsisVertical,
-    });
+    logId.set(undefined);
+    exercise.set(null);
+    workoutEntry.set(undefined);
+    sortedWorkouts.set([]);
 
-    isLoadingSignal = signal(false);
+    isEditing.set(false);
+    hasChanges.set(false);
+    draftSets.set([]);
 
-    loadingMock = {
-      present: vi.fn().mockResolvedValue(undefined),
-      dismiss: vi.fn().mockResolvedValue(undefined),
-    };
-
-    loadingControllerMock = {
-      create: vi.fn().mockResolvedValue(loadingMock),
-    };
-
-    modalControllerMock = {
-      create: vi.fn(),
-    };
-
-    ionicUiServiceMock = {
-      showError: vi.fn().mockResolvedValue(undefined),
-    };
-
-    workoutsServiceMock = {
-      workoutsResource: {
-        isLoading: isLoadingSignal,
-        value: vi.fn().mockReturnValue([workout]),
-      },
-      updateWorkoutList: vi.fn().mockReturnValue(of(undefined)),
-    };
+    locationMock.path.mockReturnValue('');
 
     await TestBed.configureTestingModule({
       imports: [WorkoutPage],
       providers: [
-        provideIonicAngular(),
-        provideTestTranslations(),
+        {
+          provide: WorkoutService,
+          useValue: workoutServiceMock,
+        },
         {
           provide: WorkoutsService,
           useValue: workoutsServiceMock,
+        },
+        {
+          provide: IonicUiService,
+          useValue: ionicUiServiceMock,
+        },
+        {
+          provide: Location,
+          useValue: locationMock,
         },
         {
           provide: LoadingController,
           useValue: loadingControllerMock,
         },
         {
-          provide: ModalController,
-          useValue: modalControllerMock,
-        },
-        {
-          provide: IonicUiService,
-          useValue: ionicUiServiceMock,
+          provide: TranslateService,
+          useValue: translateServiceMock,
         },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(WorkoutPage, {
+        set: {
+          template: '<ion-popover #moreMenu />',
+          providers: [
+            {
+              provide: WorkoutEditorState,
+              useValue: editorStateMock,
+            },
+          ],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(WorkoutPage);
-    component = fixture.componentInstance;
-    editorState = fixture.debugElement.injector.get(WorkoutEditorState);
 
-    fixture.componentRef.setInput('workoutId', '1');
+    page = fixture.componentInstance as unknown as WorkoutPageTestApi;
+
     fixture.detectChanges();
+
+    moreMenu = fixture.nativeElement.querySelector('ion-popover') as HTMLIonPopoverElement;
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  describe('workout', () => {
-    it('should resolve workout by route input', () => {
-      expect(component['workout']()).toEqual(workout);
-    });
-
-    it('should return undefined for invalid workout id', () => {
-      fixture.componentRef.setInput('workoutId', 'invalid');
-      fixture.detectChanges();
-
-      expect(component['workout']()).toBeUndefined();
-    });
-
-    it('should return undefined when workout does not exist', () => {
-      fixture.componentRef.setInput('workoutId', '999');
-      fixture.detectChanges();
-
-      expect(component['workout']()).toBeUndefined();
-    });
-
-    it('should use editor draft instead of persisted workout list', () => {
-      const draft: WorkoutList = [
-        {
-          ...WORKOUT_LIST_ITEM_HEADER,
-          itemId: 1,
-          listId: 1,
-          name: 'Edited',
-        },
-      ];
-
-      editorState.start(draft);
-
-      expect(component['workout']()?.list).toEqual(draft);
-    });
-  });
-
-  describe('title', () => {
+  describe('backButtonText', () => {
     it('should return workout name', () => {
-      expect(component['title']()).toBe('Push');
+      sortedWorkouts.set([
+        {
+          workoutId: 42,
+          name: 'Push Day',
+        },
+      ]);
+
+      fixture.componentRef.setInput('workoutId', '42');
+
+      expect(page.backButtonText()).toBe('Push Day');
+    });
+
+    it('should truncate workout name longer than 12 characters', () => {
+      sortedWorkouts.set([
+        {
+          workoutId: 42,
+          name: 'Upper Body Workout',
+        },
+      ]);
+
+      fixture.componentRef.setInput('workoutId', '42');
+
+      expect(page.backButtonText()).toBe('Upper Body...');
     });
 
     it('should return empty string when workout does not exist', () => {
-      fixture.componentRef.setInput('workoutId', '999');
+      fixture.componentRef.setInput('workoutId', '42');
 
-      expect(component['title']()).toBe('');
+      expect(page.backButtonText()).toBe('');
     });
   });
 
-  describe('isLoading', () => {
-    it('should expose loading state from workouts resource', () => {
-      isLoadingSignal.set(true);
+  describe('route synchronization', () => {
+    it('should synchronize route without log id', () => {
+      setRouteInputs();
 
-      expect(component['isLoading']()).toBe(true);
+      expect(locationMock.replaceState).toHaveBeenCalledWith(
+        '/tabs/training/1/2/Bench%20Press/log',
+      );
+    });
+
+    it('should synchronize route with log id', () => {
+      logId.set(123);
+
+      setRouteInputs();
+
+      expect(locationMock.replaceState).toHaveBeenCalledWith(
+        '/tabs/training/1/2/Bench%20Press/log/123',
+      );
+    });
+
+    it('should not replace route when current route already matches target', () => {
+      locationMock.path.mockReturnValue('/tabs/training/1/2/Bench%20Press/log/123');
+
+      logId.set(123);
+
+      setRouteInputs();
+
+      expect(locationMock.replaceState).not.toHaveBeenCalled();
+    });
+
+    it('should encode exercise as route segment', () => {
+      setRouteInputs('1', '2', 'Push / Press');
+
+      expect(locationMock.replaceState).toHaveBeenCalledWith(
+        '/tabs/training/1/2/Push%20%2F%20Press/log',
+      );
+    });
+
+    it('should not synchronize route when required inputs are missing', () => {
+      fixture.componentRef.setInput('workoutId', '1');
+
+      fixture.detectChanges();
+
+      expect(locationMock.replaceState).not.toHaveBeenCalled();
     });
   });
 
-  describe('saveEdit', () => {
-    it('should persist draft and stop editing after successful update', async () => {
-      const draft: WorkoutList = [
-        {
-          ...WORKOUT_LIST_ITEM_HEADER,
-          itemId: 1,
-          listId: 1,
-          name: 'Updated',
-        },
-      ];
+  describe('exercise synchronization', () => {
+    it('should synchronize exercise with service', () => {
+      fixture.componentRef.setInput('exercise', 'Bench Press');
 
-      editorState.start(draft);
+      fixture.detectChanges();
 
-      await component['saveEdit']();
+      expect(exercise()).toBe('Bench Press');
+    });
 
-      expect(workoutsServiceMock.updateWorkoutList).toHaveBeenCalledOnce();
+    it('should not update service when exercise is undefined', () => {
+      exercise.set('Squat');
 
-      expect(workoutsServiceMock.updateWorkoutList).toHaveBeenCalledWith(
-        expect.objectContaining({
-          workoutId: 1,
-          list: expect.any(Array),
+      fixture.componentRef.setInput('exercise', undefined);
+
+      fixture.detectChanges();
+
+      expect(exercise()).toBe('Squat');
+    });
+  });
+
+  describe('canEdit', () => {
+    it('should return false when no log workout exists', () => {
+      expect(page.canEdit()).toBe(false);
+    });
+
+    it('should return false when log workout has no sets', () => {
+      workoutEntry.set(
+        createWorkoutEntry({
+          sets: [],
         }),
       );
 
-      expect(editorState.isEditing()).toBe(false);
-
-      expect(loadingMock.present).toHaveBeenCalledOnce();
-      expect(loadingMock.dismiss).toHaveBeenCalledOnce();
+      expect(page.canEdit()).toBe(false);
     });
 
-    it('should keep editing active when update fails', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    it('should return true when log workout has sets', () => {
+      workoutEntry.set(
+        createWorkoutEntry({
+          sets: [createWorkoutSet()],
+        }),
+      );
 
-      const draft: WorkoutList = [
-        {
-          ...WORKOUT_LIST_ITEM_HEADER,
+      expect(page.canEdit()).toBe(true);
+    });
+  });
+
+  describe('editing', () => {
+    it('should start editing with current sets and dismiss more menu', async () => {
+      const sets = [
+        createWorkoutSet({
           itemId: 1,
-          listId: 1,
-          name: 'Updated',
-        },
+        }),
+        createWorkoutSet({
+          itemId: 2,
+        }),
       ];
 
-      editorState.start(draft);
-
-      workoutsServiceMock.updateWorkoutList.mockReturnValue(
-        throwError(() => new Error('Request failed')),
+      workoutEntry.set(
+        createWorkoutEntry({
+          sets,
+        }),
       );
 
-      await component['saveEdit']();
+      const dismissSpy = vi.spyOn(moreMenu, 'dismiss').mockResolvedValue(true);
 
-      expect(editorState.isEditing()).toBe(true);
+      await page.startEditing();
 
-      expect(ionicUiServiceMock.showError).toHaveBeenCalledWith(
-        'tabs.training.workout.actions.update-list.error',
-      );
-
-      expect(loadingMock.dismiss).toHaveBeenCalledOnce();
+      expect(editorStateMock.start).toHaveBeenCalledWith(sets);
+      expect(dismissSpy).toHaveBeenCalledOnce();
     });
 
-    it('should do nothing without a draft', async () => {
-      await component['saveEdit']();
+    it('should not start editing when no sets exist', async () => {
+      const dismissSpy = vi.spyOn(moreMenu, 'dismiss').mockResolvedValue(true);
 
-      expect(workoutsServiceMock.updateWorkoutList).not.toHaveBeenCalled();
+      await page.startEditing();
+
+      expect(editorStateMock.start).not.toHaveBeenCalled();
+      expect(dismissSpy).not.toHaveBeenCalled();
+    });
+
+    it('should abort editing after closing sliding items', async () => {
+      await page.abortEditing();
+
+      expect(ionicUiServiceMock.closeSlidingItems).toHaveBeenCalledOnce();
+      expect(editorStateMock.cancel).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('popover', () => {
+    it('should open popover with trigger event', () => {
+      const event = new Event('click');
+
+      page.presentPopover(event);
+
+      expect(moreMenu.event).toBe(event);
+      expect(page.isMoreMenuOpen()).toBe(true);
+    });
+  });
+
+  describe('saveEditing', () => {
+    it('should finish editing immediately when nothing changed', async () => {
+      hasChanges.set(false);
+
+      await page.saveEditing();
+
+      expect(editorStateMock.finish).toHaveBeenCalledOnce();
+
+      expect(workoutServiceMock.updateSets).not.toHaveBeenCalled();
       expect(loadingControllerMock.create).not.toHaveBeenCalled();
     });
-  });
 
-  describe('addText', () => {
-    it('should add trimmed header text to workout', async () => {
-      const modalMock = {
-        present: vi.fn().mockResolvedValue(undefined),
-        onDidDismiss: vi.fn().mockResolvedValue({
-          data: '  Warm-up  ',
-        }),
-      };
+    it('should not save when log id is undefined', async () => {
+      hasChanges.set(true);
+      draftSets.set([createWorkoutSet()]);
+      logId.set(undefined);
 
-      modalControllerMock.create.mockResolvedValue(modalMock);
+      await page.saveEditing();
 
-      await component['addText'](workout);
-
-      expect(modalControllerMock.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          componentProps: expect.objectContaining({
-            value: '',
-          }),
-        }),
-      );
-
-      expect(workoutsServiceMock.updateWorkoutList).toHaveBeenCalledWith(
-        expect.objectContaining({
-          list: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'HEADER',
-              name: 'Warm-up',
-            }),
-          ]),
-        }),
-      );
+      expect(workoutServiceMock.updateSets).not.toHaveBeenCalled();
+      expect(editorStateMock.finish).not.toHaveBeenCalled();
+      expect(loadingControllerMock.create).not.toHaveBeenCalled();
     });
 
-    it('should not update workout when text is empty', async () => {
-      modalControllerMock.create.mockResolvedValue({
-        present: vi.fn().mockResolvedValue(undefined),
-        onDidDismiss: vi.fn().mockResolvedValue({
-          data: '   ',
+    it('should update draft sets and finish editing', async () => {
+      const sets = [
+        createWorkoutSet({
+          itemId: 1,
         }),
+        createWorkoutSet({
+          itemId: 2,
+          load: 85,
+        }),
+      ];
+
+      hasChanges.set(true);
+      draftSets.set(sets);
+      logId.set(123);
+
+      workoutServiceMock.updateSets.mockReturnValue(of(undefined));
+
+      await page.saveEditing();
+
+      expect(translateServiceMock.instant).toHaveBeenCalledWith(
+        'tabs.training.workout.actions.update-sets.process',
+      );
+
+      expect(loadingControllerMock.create).toHaveBeenCalledWith({
+        message: 'tabs.training.workout.actions.update-sets.process',
+        spinner: 'circles',
       });
 
-      await component['addText'](workout);
+      expect(loadingMock.present).toHaveBeenCalledOnce();
 
-      expect(workoutsServiceMock.updateWorkoutList).not.toHaveBeenCalled();
+      expect(workoutServiceMock.updateSets).toHaveBeenCalledWith('123', sets);
+
+      expect(editorStateMock.finish).toHaveBeenCalledOnce();
+      expect(loadingMock.dismiss).toHaveBeenCalledOnce();
+
+      expect(ionicUiServiceMock.showError).not.toHaveBeenCalled();
     });
 
-    it('should not update workout when modal is dismissed without data', async () => {
-      modalControllerMock.create.mockResolvedValue({
-        present: vi.fn().mockResolvedValue(undefined),
-        onDidDismiss: vi.fn().mockResolvedValue({
-          data: undefined,
-        }),
-      });
+    it('should update with empty draft when all sets were deleted', async () => {
+      hasChanges.set(true);
+      draftSets.set([]);
+      logId.set(123);
 
-      await component['addText'](workout);
+      workoutServiceMock.updateSets.mockReturnValue(of(undefined));
 
-      expect(workoutsServiceMock.updateWorkoutList).not.toHaveBeenCalled();
-    });
-  });
+      await page.saveEditing();
 
-  describe('addExercise', () => {
-    it('should add selected exercise to workout', async () => {
-      const exercise: ListItemExercise = {
-        type: 'EXERCISE',
-        itemId: 2,
-        listId: 2,
-        name: 'Bench Press',
-        equipment: 'barbell',
-        variant: 'flat',
-        sets: '3',
-        reps: '10',
-        rest: '90',
-      };
+      expect(workoutServiceMock.updateSets).toHaveBeenCalledWith('123', []);
 
-      modalControllerMock.create.mockResolvedValue({
-        present: vi.fn().mockResolvedValue(undefined),
-        onDidDismiss: vi.fn().mockResolvedValue({
-          data: exercise,
-        }),
-      });
-
-      await component['addExercise'](workout);
-
-      expect(workoutsServiceMock.updateWorkoutList).toHaveBeenCalledWith(
-        expect.objectContaining({
-          list: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'EXERCISE',
-              name: 'Bench Press',
-              equipment: 'barbell',
-              variant: 'flat',
-              sets: '3',
-              reps: '10',
-              rest: '90',
-            }),
-          ]),
-        }),
-      );
-    });
-
-    it('should not update workout when no exercise was selected', async () => {
-      modalControllerMock.create.mockResolvedValue({
-        present: vi.fn().mockResolvedValue(undefined),
-        onDidDismiss: vi.fn().mockResolvedValue({
-          data: undefined,
-        }),
-      });
-
-      await component['addExercise'](workout);
-
-      expect(workoutsServiceMock.updateWorkoutList).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('addSpacer', () => {
-    it('should add spacer to workout', async () => {
-      await component['addSpacer'](workout);
-
-      expect(workoutsServiceMock.updateWorkoutList).toHaveBeenCalledWith(
-        expect.objectContaining({
-          list: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'SPACER',
-              name: null,
-            }),
-          ]),
-        }),
-      );
-    });
-  });
-
-  describe('update error', () => {
-    it('should show error and always dismiss loading', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-      workoutsServiceMock.updateWorkoutList.mockReturnValue(
-        throwError(() => new Error('Request failed')),
-      );
-
-      await component['addSpacer'](workout);
-
-      expect(ionicUiServiceMock.showError).toHaveBeenCalledWith(
-        'tabs.training.workout.actions.update-list.error',
-      );
-
+      expect(editorStateMock.finish).toHaveBeenCalledOnce();
       expect(loadingMock.dismiss).toHaveBeenCalledOnce();
     });
-  });
 
-  function createWorkout(overrides: Partial<WorkoutDoc> = {}): WorkoutDoc {
-    return {
-      id: 'workout-doc-id',
-      userId: 'user-id',
-      workoutId: 1,
-      listId: 1,
-      lastUpdated: 1_700_000_000_000,
-      name: 'Push',
-      list: [
-        {
-          ...WORKOUT_LIST_ITEM_HEADER,
-          itemId: 1,
-          listId: 1,
-          name: 'Chest',
-        },
-      ],
-      ...overrides,
-    };
-  }
+    it('should show error and keep editing when updating sets fails', async () => {
+      const error = new Error('Request failed');
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      hasChanges.set(true);
+      draftSets.set([createWorkoutSet()]);
+      logId.set(123);
+
+      workoutServiceMock.updateSets.mockReturnValue(throwError(() => error));
+
+      await page.saveEditing();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Could not save log workout changes', error);
+
+      expect(ionicUiServiceMock.showError).toHaveBeenCalledWith(
+        'tabs.training.workout.actions.update-sets.error',
+      );
+
+      expect(editorStateMock.finish).not.toHaveBeenCalled();
+
+      expect(loadingMock.dismiss).toHaveBeenCalledOnce();
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
 });

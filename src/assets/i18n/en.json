@@ -54,7 +54,7 @@
           }
         }
       },
-      "workout": {
+      "workout-routine": {
         "plans": "Plans",
         "empty-list": "List is empty",
         "more-menu": {
@@ -120,7 +120,7 @@
           "shrugs_dumbbell_sitting": "Shrugs Dumbbell Sitting"
         }
       },
-      "log-workout": {
+      "workout": {
         "title": "Training",
         "inputs": {
           "load": {
@@ -158,11 +158,11 @@
         }
       }
     },
-    "logs": {
-      "tab-label": "Logs",
-      "tab-title": "Logs",
-      "no-data": "No logs available for this day",
-      "loading": "Loading logs ..."
+    "calendar": {
+      "tab-label": "Calendar",
+      "tab-title": "Calendar",
+      "no-data": "No entries available for this day",
+      "loading": "Loading entries ..."
     },
     "more": {
       "tab-label": "More",
