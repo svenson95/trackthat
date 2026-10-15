@@ -1,6 +1,6 @@
 import type { GetLogsWorkoutDTO, WorkoutSet } from '../../../core';
 
-import type { JournalExerciseView } from './journal.types';
+import type { CalendarExerciseView } from './calendar.types';
 
 export function dateToLocalDate(date: Date): string {
   const year = date.getFullYear();
@@ -27,7 +27,7 @@ export function timeToSeconds(time: string | null | undefined): number {
 export function getExercisesForDate(
   workoutEntries: GetLogsWorkoutDTO,
   selectedDate: string,
-): JournalExerciseView[] {
+): CalendarExerciseView[] {
   const grouped = new Map<string, WorkoutSet[]>();
 
   for (const workoutEntry of workoutEntries) {
@@ -51,6 +51,6 @@ export function getExercisesForDate(
   });
 }
 
-export function getJournalDates(workoutEntries: GetLogsWorkoutDTO): string[] {
+export function getCalendarDates(workoutEntries: GetLogsWorkoutDTO): string[] {
   return [...new Set(workoutEntries.map((entry) => timestampToLocalDate(entry.date)))];
 }

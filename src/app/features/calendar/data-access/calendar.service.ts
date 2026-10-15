@@ -6,7 +6,7 @@ import type { GetLogsWorkoutDTO } from '../../../core';
 import { UserService } from '../../../core';
 
 @Injectable()
-export class JournalService {
+export class CalendarService {
   private readonly apiUrl = `${environment.api}logs-workout`;
 
   private readonly userService = inject(UserService);

@@ -9,8 +9,8 @@ import type { GetLogsWorkoutDTO, LogWorkoutDoc, WorkoutSet } from '../../core';
 import { DEFAULT_LANGUAGE, UserService } from '../../core';
 import { ExerciseItemComponent } from '../../shared';
 
-import { JournalService } from './data-access';
-import { JournalPage } from './journal.page';
+import { CalendarService } from './data-access';
+import { CalendarPage } from './calendar.page';
 
 @Component({
   selector: 'app-exercise-item',
@@ -20,14 +20,14 @@ class ExerciseItemStubComponent {
   readonly exercise = input.required<string>();
 }
 
-describe('JournalPage', () => {
-  let fixture: ComponentFixture<JournalPage>;
+describe('CalendarPage', () => {
+  let fixture: ComponentFixture<CalendarPage>;
 
   const workoutEntries = signal<GetLogsWorkoutDTO>([]);
   const isLoading = signal(false);
   const currentLanguage = signal(DEFAULT_LANGUAGE);
 
-  const journalServiceMock = {
+  const calendarServiceMock = {
     workoutEntriesResource: {
       value: workoutEntries,
       isLoading,
@@ -91,11 +91,11 @@ describe('JournalPage', () => {
     currentLanguage.set(DEFAULT_LANGUAGE);
 
     await TestBed.configureTestingModule({
-      imports: [JournalPage, TranslateModule.forRoot()],
+      imports: [CalendarPage, TranslateModule.forRoot()],
       providers: [
         {
-          provide: JournalService,
-          useValue: journalServiceMock,
+          provide: CalendarService,
+          useValue: calendarServiceMock,
         },
         {
           provide: UserService,
@@ -103,7 +103,7 @@ describe('JournalPage', () => {
         },
       ],
     })
-      .overrideComponent(JournalPage, {
+      .overrideComponent(CalendarPage, {
         remove: {
           imports: [ExerciseItemComponent],
         },
@@ -113,7 +113,7 @@ describe('JournalPage', () => {
       })
       .compileComponents();
 
-    fixture = TestBed.createComponent(JournalPage);
+    fixture = TestBed.createComponent(CalendarPage);
     fixture.detectChanges();
   });
 
@@ -205,11 +205,11 @@ describe('JournalPage', () => {
 
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelector('.journal-set')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.calendar-set')).toBeNull();
 
       dispatchDateChange('2026-09-20T00:00:00+02:00');
 
-      const set = fixture.nativeElement.querySelector('.journal-set');
+      const set = fixture.nativeElement.querySelector('.calendar-set');
 
       expect(set).not.toBeNull();
       expect(set.textContent).toContain('8 x');
@@ -227,7 +227,7 @@ describe('JournalPage', () => {
 
       dispatchDateChange(null);
 
-      expect(fixture.nativeElement.querySelectorAll('.journal-set')).toHaveLength(1);
+      expect(fixture.nativeElement.querySelectorAll('.calendar-set')).toHaveLength(1);
     });
 
     it('should ignore an array ionChange value', () => {
@@ -241,7 +241,7 @@ describe('JournalPage', () => {
 
       dispatchDateChange(['2026-09-20']);
 
-      expect(fixture.nativeElement.querySelectorAll('.journal-set')).toHaveLength(1);
+      expect(fixture.nativeElement.querySelectorAll('.calendar-set')).toHaveLength(1);
     });
   });
 
@@ -251,19 +251,19 @@ describe('JournalPage', () => {
 
       fixture.detectChanges();
 
-      const label = fixture.nativeElement.querySelector('.journal-data-label');
+      const label = fixture.nativeElement.querySelector('.calendar-data-label');
 
       expect(label).not.toBeNull();
-      expect(label.textContent.trim()).toBe('tabs.journal.loading');
+      expect(label.textContent.trim()).toBe('tabs.calendar.loading');
     });
 
     it('should show the no-data state when there are no exercises and loading has finished', () => {
       fixture.detectChanges();
 
-      const label = fixture.nativeElement.querySelector('.journal-data-label');
+      const label = fixture.nativeElement.querySelector('.calendar-data-label');
 
       expect(label).not.toBeNull();
-      expect(label.textContent.trim()).toBe('tabs.journal.no-data');
+      expect(label.textContent.trim()).toBe('tabs.calendar.no-data');
     });
 
     it('should render exercises instead of the loading state when exercise data exists', () => {
@@ -278,7 +278,7 @@ describe('JournalPage', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.exercises-container')).not.toBeNull();
-      expect(fixture.nativeElement.querySelector('.journal-data-label')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.calendar-data-label')).toBeNull();
     });
   });
 
@@ -307,7 +307,7 @@ describe('JournalPage', () => {
 
       fixture.detectChanges();
 
-      const sets = fixture.nativeElement.querySelectorAll('.journal-set');
+      const sets = fixture.nativeElement.querySelectorAll('.calendar-set');
 
       expect(sets).toHaveLength(2);
 
@@ -352,7 +352,7 @@ describe('JournalPage', () => {
 
       fixture.detectChanges();
 
-      const sets = fixture.nativeElement.querySelectorAll('.journal-set');
+      const sets = fixture.nativeElement.querySelectorAll('.calendar-set');
 
       expect(sets).toHaveLength(1);
       expect(sets[0].textContent).toContain('10 x');
@@ -387,7 +387,7 @@ describe('JournalPage', () => {
       const groups = fixture.nativeElement.querySelectorAll('ion-item-group.exercise-item');
 
       expect(groups).toHaveLength(2);
-      expect(fixture.nativeElement.querySelectorAll('.journal-set')).toHaveLength(3);
+      expect(fixture.nativeElement.querySelectorAll('.calendar-set')).toHaveLength(3);
     });
 
     it('should set inset lines on every set except the last set of an exercise', () => {
@@ -408,7 +408,7 @@ describe('JournalPage', () => {
 
       fixture.detectChanges();
 
-      const sets = fixture.nativeElement.querySelectorAll('.journal-set');
+      const sets = fixture.nativeElement.querySelectorAll('.calendar-set');
 
       expect(sets[0].lines).toBe('inset');
       expect(sets[1].lines).toBe('none');

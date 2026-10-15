@@ -60,7 +60,7 @@ describe('TabViewComponent', () => {
     it('should disable protected tabs when logged out', () => {
       expect(getTabButton('training').disabled).toBe(true);
       expect(getTabButton('overview').disabled).toBe(false);
-      expect(getTabButton('journal').disabled).toBe(true);
+      expect(getTabButton('calendar').disabled).toBe(true);
       expect(getTabButton('more').disabled).toBe(true);
     });
 
@@ -70,7 +70,7 @@ describe('TabViewComponent', () => {
 
       expect(getTabButton('training').disabled).toBe(false);
       expect(getTabButton('overview').disabled).toBe(false);
-      expect(getTabButton('journal').disabled).toBe(false);
+      expect(getTabButton('calendar').disabled).toBe(false);
       expect(getTabButton('more').disabled).toBe(false);
     });
   });
@@ -79,7 +79,7 @@ describe('TabViewComponent', () => {
     it('should initially display the active overview icon', () => {
       expect(getIconName('overview')).toBe('person');
       expect(getIconName('training')).toBe('bicycle-outline');
-      expect(getIconName('journal')).toBe('calendar-outline');
+      expect(getIconName('calendar')).toBe('calendar-outline');
     });
 
     it('should update the active icon when the selected tab changes', () => {

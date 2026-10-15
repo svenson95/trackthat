@@ -5,10 +5,10 @@ import type { LogWorkoutDoc, WorkoutSet } from '../../../core';
 import {
   dateToLocalDate,
   getExercisesForDate,
-  getJournalDates,
+  getCalendarDates,
   timeToSeconds,
   timestampToLocalDate,
-} from './journal.utils';
+} from './calendar.utils';
 
 const createTimestamp = (year: number, month: number, day: number, hours = 12): number => {
   return Math.floor(new Date(year, month - 1, day, hours).getTime() / 1000);
@@ -33,7 +33,7 @@ const createWorkoutEntry = (overrides: Partial<LogWorkoutDoc> = {}): LogWorkoutD
   ...overrides,
 });
 
-describe('journal utils', () => {
+describe('calendar utils', () => {
   describe('dateToLocalDate', () => {
     it('should format a date as local YYYY-MM-DD', () => {
       const date = new Date(2026, 8, 21, 12);
@@ -278,7 +278,7 @@ describe('journal utils', () => {
     });
   });
 
-  describe('getJournalDates', () => {
+  describe('getCalendarDates', () => {
     it('should return the dates that contain workout entries', () => {
       const workoutEntries = [
         createWorkoutEntry({
@@ -293,7 +293,7 @@ describe('journal utils', () => {
         }),
       ];
 
-      expect(getJournalDates(workoutEntries)).toEqual(['2026-09-20', '2026-09-21']);
+      expect(getCalendarDates(workoutEntries)).toEqual(['2026-09-20', '2026-09-21']);
     });
 
     it('should return each date only once', () => {
@@ -310,11 +310,11 @@ describe('journal utils', () => {
         }),
       ];
 
-      expect(getJournalDates(workoutEntries)).toEqual(['2026-09-20']);
+      expect(getCalendarDates(workoutEntries)).toEqual(['2026-09-20']);
     });
 
     it('should return an empty array when there are no entries', () => {
-      expect(getJournalDates([])).toEqual([]);
+      expect(getCalendarDates([])).toEqual([]);
     });
   });
 });

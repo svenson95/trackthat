@@ -158,9 +158,9 @@
         }
       }
     },
-    "journal": {
-      "tab-label": "Journal",
-      "tab-title": "Journal",
+    "calendar": {
+      "tab-label": "Calendar",
+      "tab-title": "Calendar",
       "no-data": "No entries available for this day",
       "loading": "Loading entries ..."
     },

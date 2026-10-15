@@ -8,10 +8,10 @@ import { environment } from '../../../../environments/environment';
 import type { GetLogsWorkoutDTO, UserDoc } from '../../../core';
 import { UserService } from '../../../core';
 
-import { JournalService } from './journal.service';
+import { CalendarService } from './calendar.service';
 
-describe('JournalService', () => {
-  let service: JournalService;
+describe('CalendarService', () => {
+  let service: CalendarService;
   let httpTestingController: HttpTestingController;
 
   const userData = signal<UserDoc | undefined>(undefined);
@@ -34,7 +34,7 @@ describe('JournalService', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        JournalService,
+        CalendarService,
         provideHttpClient(),
         provideHttpClientTesting(),
         {
@@ -44,7 +44,7 @@ describe('JournalService', () => {
       ],
     });
 
-    service = TestBed.inject(JournalService);
+    service = TestBed.inject(CalendarService);
     httpTestingController = TestBed.inject(HttpTestingController);
   });
 

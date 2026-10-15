@@ -20,9 +20,9 @@ import type { GetLogsWorkoutDTO } from '../../core';
 import { UserService } from '../../core';
 import { ExerciseItemComponent } from '../../shared';
 
-import { JournalService } from './data-access';
-import type { JournalExerciseView } from './utils';
-import { dateToLocalDate, getExercisesForDate, getJournalDates } from './utils';
+import { CalendarService } from './data-access';
+import type { CalendarExerciseView } from './utils';
+import { dateToLocalDate, getExercisesForDate, getCalendarDates } from './utils';
 
 const ION_COMPONENTS = [
   IonHeader,
@@ -40,7 +40,7 @@ const ION_COMPONENTS = [
 ];
 
 @Component({
-  selector: 'app-journal-page',
+  selector: 'app-calendar-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...ION_COMPONENTS, TranslateModule, ExerciseItemComponent],
   styles: `
@@ -53,7 +53,7 @@ const ION_COMPONENTS = [
       }
     }
 
-    .journal-data-label {
+    .calendar-data-label {
       margin-inline: auto;
     }
 
@@ -84,14 +84,14 @@ const ION_COMPONENTS = [
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-title>{{ 'tabs.journal.tab-title' | translate }}</ion-title>
+        <ion-title>{{ 'tabs.calendar.tab-title' | translate }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content [fullscreen]="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">{{ 'tabs.journal.tab-title' | translate }}</ion-title>
+          <ion-title size="large">{{ 'tabs.calendar.tab-title' | translate }}</ion-title>
         </ion-toolbar>
       </ion-header>
 
@@ -129,7 +129,7 @@ const ION_COMPONENTS = [
                     <ion-item
                       button
                       [detail]="false"
-                      class="journal-set ion-activatable"
+                      class="calendar-set ion-activatable"
                       [lines]="isLast ? 'none' : 'inset'"
                     >
                       <ion-label>
@@ -150,37 +150,37 @@ const ION_COMPONENTS = [
             }
           </div>
         } @else if (isLoading()) {
-          <p class="journal-data-label">
-            {{ 'tabs.journal.loading' | translate }}
+          <p class="calendar-data-label">
+            {{ 'tabs.calendar.loading' | translate }}
           </p>
         } @else {
-          <p class="journal-data-label">
-            {{ 'tabs.journal.no-data' | translate }}
+          <p class="calendar-data-label">
+            {{ 'tabs.calendar.no-data' | translate }}
           </p>
         }
       </div>
     </ion-content>
   `,
 })
-export class JournalPage {
-  private readonly journalService = inject(JournalService);
+export class CalendarPage {
+  private readonly calendarService = inject(CalendarService);
   private readonly userService = inject(UserService);
 
   private readonly workoutEntries = computed<GetLogsWorkoutDTO>(
-    () => this.journalService.workoutEntriesResource.value() ?? [],
+    () => this.calendarService.workoutEntriesResource.value() ?? [],
   );
 
   protected readonly selectedDate = signal<string>(dateToLocalDate(new Date()));
 
-  protected readonly isLoading = this.journalService.workoutEntriesResource.isLoading;
+  protected readonly isLoading = this.calendarService.workoutEntriesResource.isLoading;
   protected readonly currentLanguage = this.userService.currentLanguage;
 
-  protected readonly exercises = computed<JournalExerciseView[]>(() => {
+  protected readonly exercises = computed<CalendarExerciseView[]>(() => {
     return getExercisesForDate(this.workoutEntries(), this.selectedDate());
   });
 
   protected readonly highlightedDates = computed(() => {
-    return getJournalDates(this.workoutEntries()).map((date) => ({
+    return getCalendarDates(this.workoutEntries()).map((date) => ({
       date,
       backgroundColor: 'var(--ion-color-light-tint)',
     }));

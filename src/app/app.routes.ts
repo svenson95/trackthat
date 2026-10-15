@@ -22,9 +22,9 @@ export const appRoutes: Routes = [
           import('./features/overview/overview.routes').then((m) => m.OVERVIEW_ROUTES),
       },
       {
-        path: 'journal',
+        path: 'calendar',
         loadChildren: () =>
-          import('./features/journal/journal.routes').then((m) => m.JOURNAL_ROUTES),
+          import('./features/calendar/calendar.routes').then((m) => m.CALENDAR_ROUTES),
       },
       {
         path: 'more',

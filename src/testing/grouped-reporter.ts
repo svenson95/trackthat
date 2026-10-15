@@ -65,8 +65,8 @@ const TEST_GROUPS: TestGroup[] = [
         sectionByFolder: true,
       },
       {
-        name: 'JOURNAL',
-        path: '/features/journal/',
+        name: 'CALENDAR',
+        path: '/features/calendar/',
         sectionByFolder: true,
       },
       {
