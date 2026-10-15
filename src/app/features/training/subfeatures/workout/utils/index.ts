@@ -1,1 +1,2 @@
-export * from './workout-list/workout-list.utils';
+export * from './workout.validators';
+export * from './time.utils';

@@ -27,7 +27,7 @@ const ION_COMPONENTS = [IonLabel];
       height="24"
     />
     <ion-label>
-      {{ 'tabs.training.workout.exercise.' + exercise() | translate }}
+      {{ 'tabs.training.workout-routine.exercise.' + exercise() | translate }}
     </ion-label>
   `,
 })

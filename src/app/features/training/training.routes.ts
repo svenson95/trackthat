@@ -18,12 +18,14 @@ export const TRAINING_ROUTES: Routes = [
       {
         path: ':workoutId',
         loadComponent: () =>
-          import('./subfeatures/workout/workout.page').then((m) => m.WorkoutPage),
+          import('./subfeatures/workout-routine/workout-routine.page').then(
+            (m) => m.WorkoutRoutinePage,
+          ),
       },
       {
         path: ':workoutId/:itemId/:exercise/log',
         loadChildren: () =>
-          import('./subfeatures/log-workout/log-workout.routes').then((m) => m.LOG_WORKOUT_ROUTES),
+          import('./subfeatures/workout/workout.routes').then((m) => m.WORKOUT_ROUTES),
       },
     ],
   },

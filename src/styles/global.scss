@@ -154,7 +154,7 @@ ion-alert {
 
 /* GLOBAL STYLING */
 
-// TODO refactor: remove seperate ion-item-divider element in log-workout-data (other one in log-workout-set-list)
+// TODO refactor: remove seperate ion-item-divider element in workout-data (other one in workout-set-list)
 .item-container {
   display: flex;
   flex-direction: column;
@@ -178,7 +178,7 @@ ion-alert {
   }
 }
 
-// skeleton training/workout/log-workout
+// skeleton training/workout/workout
 .exercise-skeleton-title {
   display: flex;
   align-items: center;

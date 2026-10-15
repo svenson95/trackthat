@@ -22,8 +22,9 @@ export const appRoutes: Routes = [
           import('./features/overview/overview.routes').then((m) => m.OVERVIEW_ROUTES),
       },
       {
-        path: 'logs',
-        loadChildren: () => import('./features/logs/logs.routes').then((m) => m.LOGS_ROUTES),
+        path: 'journal',
+        loadChildren: () =>
+          import('./features/journal/journal.routes').then((m) => m.JOURNAL_ROUTES),
       },
       {
         path: 'more',
