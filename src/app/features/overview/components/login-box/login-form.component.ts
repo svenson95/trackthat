@@ -194,7 +194,11 @@ export class LoginFormComponent implements AfterViewInit {
   readonly isGoogleReady = signal(false);
   readonly isGoogleInitializing = signal(true);
 
-  async ngAfterViewInit(): Promise<void> {
+  ngAfterViewInit(): void {
+    void this.initializeGoogleAuth();
+  }
+
+  private async initializeGoogleAuth(): Promise<void> {
     try {
       await this.googleAuthService.initialize();
       this.isGoogleReady.set(true);
